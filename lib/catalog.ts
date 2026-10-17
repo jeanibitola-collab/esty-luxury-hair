@@ -1,7 +1,7 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { createPublicClient } from "./supabase/public";
 import type { Product } from "./products";
-import { DELIVERY_FEE, type OrderItem, type Method } from "./checkout";
+import type { OrderItem, Method, DeliveryZone } from "./checkout";
 
 type ProductRow = {
   id: string;
@@ -31,8 +31,6 @@ function toProduct(row: ProductRow): Product {
   };
 }
 
-// All products, remembered for speed. The admin page refreshes this
-// instantly whenever something changes.
 export async function getProducts(): Promise<Product[]> {
   "use cache";
   cacheTag("products");
@@ -54,9 +52,27 @@ export async function getProduct(slug: string) {
   return products.find((p) => p.slug === slug);
 }
 
+// Active delivery areas, cheapest first
+export async function getDeliveryZones(): Promise<DeliveryZone[]> {
+  "use cache";
+  cacheTag("delivery-zones");
+  cacheLife("hours");
+
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("delivery_zones")
+    .select("id, name, fee")
+    .eq("active", true)
+    .order("fee", { ascending: true })
+    .order("name", { ascending: true });
+
+  if (error) throw new Error(`Could not load delivery areas: ${error.message}`);
+  return data as DeliveryZone[];
+}
+
 // Works out the real total from database prices (never trusts the browser)
-export async function calculateOrder(items: OrderItem[], method: Method) {
-  const products = await getProducts();
+export async function calculateOrder(items: OrderItem[], method: Method, zoneId?: string) {
+  const [products, zones] = await Promise.all([getProducts(), getDeliveryZones()]);
 
   const lines = items.flatMap((item) => {
     const product = products.find((p) => p.slug === item.slug);
@@ -66,7 +82,8 @@ export async function calculateOrder(items: OrderItem[], method: Method) {
   });
 
   const subtotal = lines.reduce((sum, l) => sum + l.product.price * l.quantity, 0);
-  const delivery = method === "delivery" ? DELIVERY_FEE : 0;
+  const zone = method === "delivery" ? zones.find((z) => z.id === zoneId) ?? null : null;
+  const delivery = zone?.fee ?? 0;
 
-  return { lines, subtotal, delivery, total: subtotal + delivery };
+  return { lines, subtotal, delivery, zone, total: subtotal + delivery };
 }

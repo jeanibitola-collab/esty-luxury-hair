@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { calculateOrder } from "../../../../lib/catalog";
+import { formatMoney } from "../../../../lib/products";
 import type { OrderItem, Method } from "../../../../lib/checkout";
 
 type Body = {
@@ -8,6 +9,7 @@ type Body = {
   email: string;
   phone: string;
   method: Method;
+  zoneId?: string;
   address?: string;
   notes?: string;
 };
@@ -44,12 +46,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Please check your details." }, { status: 400 });
   }
 
-    const order = await calculateOrder(body.items, method);
+  const order = await calculateOrder(body.items, method, body.zoneId);
+
   if (order.lines.length === 0) {
     return NextResponse.json(
       { error: "Your cart is empty or the items are unavailable." },
       { status: 400 }
     );
+  }
+  if (method === "delivery" && !order.zone) {
+    return NextResponse.json({ error: "Please choose your delivery area." }, { status: 400 });
   }
 
   const reference = `ORD-${Date.now().toString(36).toUpperCase()}-${Math.random()
@@ -57,7 +63,9 @@ export async function POST(request: Request) {
     .slice(2, 6)
     .toUpperCase()}`;
   const itemsText = order.lines.map((l) => `${l.quantity} × ${l.product.name}`).join(", ");
-  const fulfilment = method === "pickup" ? "Pickup at salon" : `Delivery: ${address}`;
+  const fulfilment = order.zone
+    ? `Delivery to ${order.zone.name} (${formatMoney(order.zone.fee)}): ${address}`
+    : "Pickup at salon";
 
   const res = await fetch("https://api.paystack.co/transaction/initialize", {
     method: "POST",

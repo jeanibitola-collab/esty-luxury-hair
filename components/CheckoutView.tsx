@@ -4,19 +4,20 @@ import Link from "next/link";
 import { useState } from "react";
 import { useCart } from "../lib/cart";
 import { formatMoney } from "../lib/products";
-import { DELIVERY_FEE, type Method } from "../lib/checkout";
+import type { DeliveryZone, Method } from "../lib/checkout";
 import { site } from "../lib/site";
 
 const inputClass =
   "w-full rounded-2xl border border-pink-soft bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-rosy";
 
-export default function CheckoutView() {
+export default function CheckoutView({ zones }: { zones: DeliveryZone[] }) {
   const { lines, subtotal, count, ready, clearCart } = useCart();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [method, setMethod] = useState<Method>("pickup");
+  const [zoneId, setZoneId] = useState("");
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
@@ -73,14 +74,18 @@ export default function CheckoutView() {
     );
   }
 
-  const delivery = method === "delivery" ? DELIVERY_FEE : 0;
+  const zone = zones.find((z) => z.id === zoneId);
+  const delivery = method === "delivery" ? zone?.fee ?? 0 : 0;
   const total = subtotal + delivery;
 
-  const validate = (needEmail: boolean) => {
+  const validate = (online: boolean) => {
     if (!name.trim() || !phone.trim()) return "Please enter your name and phone number.";
-    if (needEmail && !/^\S+@\S+\.\S+$/.test(email.trim()))
+    if (online && !/^\S+@\S+\.\S+$/.test(email.trim()))
       return "Please enter a valid email address for your receipt.";
-    if (method === "delivery" && !address.trim()) return "Please enter your delivery address.";
+    if (method === "delivery") {
+      if (online && !zone) return "Please choose your delivery area.";
+      if (!address.trim()) return "Please enter your delivery address.";
+    }
     return "";
   };
 
@@ -102,6 +107,7 @@ export default function CheckoutView() {
           email,
           phone,
           method,
+          zoneId,
           address,
           notes,
         }),
@@ -115,13 +121,20 @@ export default function CheckoutView() {
     }
   };
 
-  // Order on WhatsApp instead
+  // Order on WhatsApp instead (works even if the area isn't listed)
   const handleWhatsApp = () => {
     const problem = validate(false);
     if (problem) return setError(problem);
     setError("");
 
     const ref = `ORD-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+    const deliveryLine =
+      method === "pickup"
+        ? "Pickup at the salon"
+        : zone
+        ? `Delivery to ${zone.name} (${formatMoney(zone.fee)}): ${address.trim()}`
+        : `Delivery to: ${address.trim()} (please quote delivery fee)`;
+
     const message = [
       `Hi ${site.name}! I'd like to place an order 🛍️`,
       `Order: ${ref}`,
@@ -132,15 +145,15 @@ export default function CheckoutView() {
       ),
       "",
       `Subtotal: ${formatMoney(subtotal)}`,
-      method === "pickup"
-        ? "Pickup at the salon"
-        : `Delivery (${formatMoney(DELIVERY_FEE)}) to: ${address.trim()}`,
-      `Total: ${formatMoney(total)}`,
+      deliveryLine,
+      method === "delivery" && !zone ? "" : `Total: ${formatMoney(total)}`,
       "",
       `Name: ${name.trim()}`,
       `Phone: ${phone.trim()}`,
       notes.trim() ? `Notes: ${notes.trim()}` : "",
-    ].join("\n").trim();
+    ]
+      .join("\n")
+      .trim();
 
     const link = `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(message)}`;
     window.open(link, "_blank");
@@ -208,17 +221,38 @@ export default function CheckoutView() {
           <h2 className="mb-3 font-display text-xl">How would you like to get it?</h2>
           <div className="space-y-3">
             {methodOption("pickup", "Pickup at the salon", "Free. We’ll let you know when it’s ready.")}
-            {methodOption("delivery", "Delivery", `${formatMoney(DELIVERY_FEE)} delivery fee.`)}
+            {methodOption("delivery", "Delivery", "Fee depends on your area.")}
           </div>
+
           {method === "delivery" && (
-            <textarea
-              placeholder="Delivery address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              autoComplete="street-address"
-              rows={3}
-              className={`${inputClass} mt-3`}
-            />
+            <div className="mt-3 space-y-3">
+              {zones.length > 0 ? (
+                <select
+                  value={zoneId}
+                  onChange={(e) => setZoneId(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">Choose your area…</option>
+                  {zones.map((z) => (
+                    <option key={z.id} value={z.id}>
+                      {z.name} – {formatMoney(z.fee)}
+                    </option>
+                  ))}
+                </select>
+              ) : null}
+              <textarea
+                placeholder="Full delivery address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                autoComplete="street-address"
+                rows={3}
+                className={inputClass}
+              />
+              <p className="text-xs text-plum/60">
+                Can’t find your area? Choose “Order on WhatsApp” below and we’ll quote your
+                delivery fee.
+              </p>
+            </div>
           )}
         </section>
 
@@ -252,9 +286,15 @@ export default function CheckoutView() {
             <span className="text-plum/60">Subtotal ({count})</span>
             <span>{formatMoney(subtotal)}</span>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between gap-4">
             <span className="text-plum/60">Delivery</span>
-            <span>{delivery ? formatMoney(delivery) : "Free"}</span>
+            <span className="text-right">
+              {method === "pickup"
+                ? "Free"
+                : zone
+                ? formatMoney(zone.fee)
+                : "Choose your area"}
+            </span>
           </div>
         </div>
         <div className="mt-3 flex justify-between border-t border-petal pt-3 font-semibold">

@@ -91,3 +91,35 @@ export async function toggleStock(formData: FormData) {
   updateTag("products");
   revalidatePath("/admin/products");
 }
+export async function saveZone(formData: FormData) {
+  const { supabase } = await requireAdmin();
+
+  const id = String(formData.get("id") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const fee = Number(formData.get("fee"));
+  const active = formData.get("active") === "on";
+
+  if (!name || !Number.isFinite(fee) || fee < 0) return;
+
+  const values = { name, fee: Math.round(fee), active };
+
+  if (id) {
+    await supabase.from("delivery_zones").update(values).eq("id", id);
+  } else {
+    await supabase.from("delivery_zones").insert(values);
+  }
+
+  updateTag("delivery-zones"); // checkout shows the new fees straight away
+  revalidatePath("/admin/delivery");
+}
+
+export async function deleteZone(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+
+  await supabase.from("delivery_zones").delete().eq("id", id);
+
+  updateTag("delivery-zones");
+  revalidatePath("/admin/delivery");
+}

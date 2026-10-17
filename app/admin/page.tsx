@@ -21,6 +21,14 @@ async function Dashboard() {
       title: "Products",
       text: "Add new products, change prices and photos, mark items sold out.",
     },
+
+    {
+      href: "/admin/delivery",
+      icon: "🚚",
+      title: "Delivery Areas",
+      text: "Set delivery fees for each area. Change them any time.",
+    },
+
     {
       href: "/shop",
       icon: "👀",

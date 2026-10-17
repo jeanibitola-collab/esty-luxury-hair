@@ -18,8 +18,16 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://esty-luxury-hair.vercel.app/"),
   title: site.name,
   description: site.tagline,
+  openGraph: {
+    title: site.name,
+    description: site.tagline,
+    siteName: site.name,
+    type: "website",
+    locale: "en_NG",
+  },
 };
 
 export default function RootLayout({
