@@ -16,7 +16,9 @@ type Props = {
 export default function SearchPage({ searchParams }: Props) {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 md:py-12">
-      <Suspense fallback={<p className="py-24 text-center text-plum/60">Searching…</p>}>
+      <Suspense
+        fallback={<p className="py-24 text-center text-plum/60">Searching…</p>}
+      >
         <Results searchParams={searchParams} />
       </Suspense>
     </div>
@@ -41,10 +43,11 @@ async function Results({ searchParams }: Props) {
     words.every((w) => text.toLowerCase().includes(w));
 
   const products = (await getProducts()).filter((p) =>
-    matches(`${p.name} ${p.category} ${p.description}`)
+    matches(`${p.name} ${p.category} ${p.description}`),
   );
-    const services = await getServices();
-    matches(`${s.name} ${s.category} ${s.description}`)
+  const services = await getServices();
+  const foundServices = services.filter((s) =>
+    matches(`${s.name} ${s.category} ${s.description}`),
   );
   const total = products.length + foundServices.length;
 
@@ -59,7 +62,9 @@ async function Results({ searchParams }: Props) {
 
       {total === 0 && (
         <div className="py-16 text-center">
-          <p className="text-plum/70">Nothing matched your search. Try a different word, or browse:</p>
+          <p className="text-plum/70">
+            Nothing matched your search. Try a different word, or browse:
+          </p>
           <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
             <Link
               href="/services"
@@ -92,9 +97,13 @@ async function Results({ searchParams }: Props) {
                     <p className="text-xs text-plum/60">{service.category}</p>
                     <h3 className="text-lg font-medium">{service.name}</h3>
                   </div>
-                  <p className="shrink-0 font-semibold text-berry">{formatPrice(service)}</p>
+                  <p className="shrink-0 font-semibold text-berry">
+                    {formatPrice(service)}
+                  </p>
                 </div>
-                <p className="mt-2 flex-1 text-sm text-plum/75">{service.description}</p>
+                <p className="mt-2 flex-1 text-sm text-plum/75">
+                  {service.description}
+                </p>
                 <div className="mt-4 flex items-center justify-between">
                   <span className="rounded-full bg-petal px-3 py-1 text-xs">
                     ⏱ {formatDuration(service.duration)}
@@ -124,7 +133,10 @@ async function Results({ searchParams }: Props) {
                 className="group rounded-3xl bg-white p-3 shadow-sm ring-1 ring-petal transition-shadow hover:shadow-md"
               >
                 <div className="relative">
-                  <ProductImage product={product} sizes="(max-width: 768px) 50vw, 25vw" />
+                  <ProductImage
+                    product={product}
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                  />
                   {!product.inStock && (
                     <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-xs">
                       Sold out
@@ -135,7 +147,9 @@ async function Results({ searchParams }: Props) {
                 <h3 className="mt-0.5 text-sm font-medium leading-snug group-hover:text-berry md:text-base">
                   {product.name}
                 </h3>
-                <p className="mt-1 font-semibold text-berry">{formatMoney(product.price)}</p>
+                <p className="mt-1 font-semibold text-berry">
+                  {formatMoney(product.price)}
+                </p>
               </Link>
             ))}
           </div>
