@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import ProductImage from "../../components/ProductImage";
-import { getProducts } from "../../lib/catalog";
+import { getProducts, getServices } from "../../lib/catalog";
 import { formatMoney } from "../../lib/products";
-import { services, formatPrice, formatDuration } from "../../lib/services";
+import { formatPrice, formatDuration } from "../../lib/services";
 
 export const metadata = {
   title: "Search",
@@ -43,7 +43,7 @@ async function Results({ searchParams }: Props) {
   const products = (await getProducts()).filter((p) =>
     matches(`${p.name} ${p.category} ${p.description}`)
   );
-  const foundServices = services.filter((s) =>
+    const services = await getServices();
     matches(`${s.name} ${s.category} ${s.description}`)
   );
   const total = products.length + foundServices.length;

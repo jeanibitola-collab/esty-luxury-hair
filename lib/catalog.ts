@@ -2,6 +2,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { createPublicClient } from "./supabase/public";
 import type { Product } from "./products";
 import type { OrderItem, Method, DeliveryZone } from "./checkout";
+import type { Service } from "./services";
 
 type ProductRow = {
   id: string;
@@ -86,4 +87,30 @@ export async function calculateOrder(items: OrderItem[], method: Method, zoneId?
   const delivery = zone?.fee ?? 0;
 
   return { lines, subtotal, delivery, zone, total: subtotal + delivery };
+}
+// Active services, in the order set in the admin
+export async function getServices(): Promise<Service[]> {
+  "use cache";
+  cacheTag("services");
+  cacheLife("hours");
+
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("services")
+    .select("id, name, category, description, duration, price, price_from")
+    .eq("active", true)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (error) throw new Error(`Could not load services: ${error.message}`);
+
+  return data.map((row) => ({
+    id: row.id,
+    name: row.name,
+    category: row.category,
+    description: row.description,
+    duration: row.duration,
+    price: row.price,
+    priceFrom: row.price_from,
+  }));
 }

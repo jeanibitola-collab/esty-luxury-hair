@@ -123,3 +123,80 @@ export async function deleteZone(formData: FormData) {
   updateTag("delivery-zones");
   revalidatePath("/admin/delivery");
 }
+
+export async function saveService(_prev: FormState, formData: FormData): Promise<FormState> {
+  const { supabase } = await requireAdmin();
+
+  const id = String(formData.get("id") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const category = String(formData.get("category") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const duration = Number(formData.get("duration"));
+  const price = Number(formData.get("price"));
+  const price_from = formData.get("price_from") === "on";
+  const active = formData.get("active") === "on";
+
+  if (!name) return { error: "Please enter a service name." };
+  if (!category) return { error: "Please enter a category." };
+  if (!Number.isFinite(price) || price < 0) return { error: "Please enter a valid price." };
+  if (!Number.isFinite(duration) || duration < 5 || duration > 720)
+    return { error: "Duration must be between 5 and 720 minutes." };
+
+  const values = {
+    name,
+    category,
+    description,
+    duration: Math.round(duration),
+    price: Math.round(price),
+    price_from,
+    active,
+  };
+
+  if (id) {
+    const { error } = await supabase.from("services").update(values).eq("id", id);
+    if (error) return { error: error.message };
+  } else {
+    // New services go to the end of the list
+    const { data: last } = await supabase
+      .from("services")
+      .select("sort_order")
+      .order("sort_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const sort_order = (last?.sort_order ?? 0) + 1;
+
+    let newId = slugify(name) || "service";
+    let { error } = await supabase.from("services").insert({ ...values, id: newId, sort_order });
+    if (error?.code === "23505") {
+      newId = `${newId}-${Math.random().toString(36).slice(2, 6)}`;
+      ({ error } = await supabase.from("services").insert({ ...values, id: newId, sort_order }));
+    }
+    if (error) return { error: error.message };
+  }
+
+  updateTag("services"); // refresh Services, Booking and Search straight away
+  redirect("/admin/services?saved=1");
+}
+
+export async function deleteService(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+
+  await supabase.from("services").delete().eq("id", id);
+
+  updateTag("services");
+  redirect("/admin/services?deleted=1");
+}
+
+export async function toggleService(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  const active = formData.get("active") === "true";
+  if (!id) return;
+
+  await supabase.from("services").update({ active }).eq("id", id);
+
+  updateTag("services");
+  revalidatePath("/admin/services");
+}

@@ -1,16 +1,15 @@
 import Link from "next/link";
-import {
-  categories,
-  services,
-  formatDuration,
-  formatPrice,
-} from "../../lib/services";
+import { getServices } from "../../lib/catalog";
+import { formatDuration, formatPrice, getServiceCategories } from "../../lib/services";
 
 export const metadata = {
   title: "Services",
 };
 
-export default function ServicesPage() {
+export default async function ServicesPage() {
+  const services = await getServices();
+  const categories = getServiceCategories(services);
+
   return (
     <>
       {/* Page header */}
@@ -43,34 +42,24 @@ export default function ServicesPage() {
 
       {/* Services grouped by category */}
       <div className="mx-auto max-w-6xl px-4 py-10">
-        {categories.map((category) => {
-          const items = services.filter((s) => s.category === category);
-          if (items.length === 0) return null;
+        {categories.map((category) => (
+          <section key={category} id={slugify(category)} className="scroll-mt-32 pb-10">
+            <h2 className="mb-5 font-display text-2xl md:text-3xl">{category}</h2>
 
-          return (
-            <section
-              key={category}
-              id={slugify(category)}
-              className="scroll-mt-32 pb-10"
-            >
-              <h2 className="mb-5 font-display text-2xl md:text-3xl">{category}</h2>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                {items.map((service) => (
+            <div className="grid gap-4 md:grid-cols-2">
+              {services
+                .filter((s) => s.category === category)
+                .map((service) => (
                   <div
                     key={service.id}
                     className="flex flex-col rounded-3xl bg-white p-5 shadow-sm ring-1 ring-petal"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <h3 className="text-lg font-medium">{service.name}</h3>
-                      <p className="shrink-0 font-semibold text-berry">
-                        {formatPrice(service)}
-                      </p>
+                      <p className="shrink-0 font-semibold text-berry">{formatPrice(service)}</p>
                     </div>
 
-                    <p className="mt-2 flex-1 text-sm text-plum/75">
-                      {service.description}
-                    </p>
+                    <p className="mt-2 flex-1 text-sm text-plum/75">{service.description}</p>
 
                     <div className="mt-4 flex items-center justify-between">
                       <span className="rounded-full bg-petal px-3 py-1 text-xs">
@@ -85,10 +74,9 @@ export default function ServicesPage() {
                     </div>
                   </div>
                 ))}
-              </div>
-            </section>
-          );
-        })}
+            </div>
+          </section>
+        ))}
       </div>
     </>
   );

@@ -5,7 +5,9 @@ import SignOutButton from "../../components/admin/SignOutButton";
 
 export default function AdminPage() {
   return (
-    <Suspense fallback={<p className="py-24 text-center text-plum/60">Loading…</p>}>
+    <Suspense
+      fallback={<p className="py-24 text-center text-plum/60">Loading…</p>}
+    >
       <Dashboard />
     </Suspense>
   );
@@ -20,6 +22,13 @@ async function Dashboard() {
       icon: "🛍️",
       title: "Products",
       text: "Add new products, change prices and photos, mark items sold out.",
+    },
+
+    {
+      href: "/admin/services",
+      icon: "💇🏾‍♀️",
+      title: "Services",
+      text: "Change prices and durations, add new services, or hide one temporarily.",
     },
 
     {

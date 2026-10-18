@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
-  categories,
-  services,
   formatDuration,
   formatPrice,
+  getServiceCategories,
+  type Service,
 } from "../lib/services";
 import {
   getUpcomingDays,
@@ -30,7 +30,8 @@ function StepTitle({ number, title }: { number: number; title: string }) {
   );
 }
 
-export default function BookingForm() {
+export default function BookingForm({ services }: { services: Service[] }) {
+  const categories = getServiceCategories(services);
   const searchParams = useSearchParams();
   const fromLink = searchParams.get("service");
   const initialService = services.some((s) => s.id === fromLink) ? fromLink! : "";

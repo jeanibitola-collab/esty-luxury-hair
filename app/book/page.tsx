@@ -1,11 +1,14 @@
 import { Suspense } from "react";
 import BookingForm from "../../components/BookingForm";
+import { getServices } from "../../lib/catalog";
 
 export const metadata = {
   title: "Book an Appointment",
 };
 
-export default function BookPage() {
+export default async function BookPage() {
+  const services = await getServices();
+
   return (
     <>
       <section className="bg-gradient-to-b from-petal to-blush">
@@ -22,7 +25,7 @@ export default function BookPage() {
 
       <div className="mx-auto max-w-2xl px-4 py-10">
         <Suspense fallback={<div className="py-24" />}>
-          <BookingForm />
+          <BookingForm services={services} />
         </Suspense>
       </div>
     </>
