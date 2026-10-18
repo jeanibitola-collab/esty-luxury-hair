@@ -4,7 +4,7 @@ import { FaInstagram, FaTiktok, FaWhatsapp } from "react-icons/fa6";
 import { site } from "../lib/site";
 
 const socials = [
-  { label: "Instagram", href: "https://instagram.com/", Icon: FaInstagram },
+  { label: "Instagram", href: "https://www.instagram.com/hair_in_kurudu", Icon: FaInstagram },
   { label: "TikTok", href: "https://www.tiktok.com/@big_esther1?_r=1&_t=ZS-9AdTvDRTSBI", Icon: FaTiktok },
   { label: "WhatsApp", href: "https://wa.me/+2347039096685", Icon: FaWhatsapp },
 ];

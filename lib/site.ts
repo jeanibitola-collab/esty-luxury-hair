@@ -3,7 +3,7 @@ export const site = {
   tagline: "Luxury hair, lashes & nails, made for you.",
   phone: "+234 703 909 6685",
   whatsapp: "2347039096685", // country code + number, no "+" or spaces
-  instagram: "https://instagram.com/yourhandle",
+  instagram: "https://www.instagram.com/hair_in_kurudu",
   address:
     "Shop A10 Ben Cash plaza Kurudu, Nyanya Karishi Road, Abuja 900109, Federal Capital Territory",
   hours: [

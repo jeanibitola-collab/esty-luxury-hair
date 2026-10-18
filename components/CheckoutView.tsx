@@ -63,7 +63,9 @@ export default function CheckoutView({ zones }: { zones: DeliveryZone[] }) {
     return (
       <div className="py-20 text-center">
         <h2 className="font-display text-2xl">Your cart is empty</h2>
-        <p className="mt-2 text-plum/70">Add some products before checking out.</p>
+        <p className="mt-2 text-plum/70">
+          Add some products before checking out.
+        </p>
         <Link
           href="/shop"
           className="mt-6 inline-block rounded-full bg-rosy px-8 py-3 font-medium text-white transition-colors hover:bg-berry"
@@ -75,11 +77,12 @@ export default function CheckoutView({ zones }: { zones: DeliveryZone[] }) {
   }
 
   const zone = zones.find((z) => z.id === zoneId);
-  const delivery = method === "delivery" ? zone?.fee ?? 0 : 0;
+  const delivery = method === "delivery" ? (zone?.fee ?? 0) : 0;
   const total = subtotal + delivery;
 
   const validate = (online: boolean) => {
-    if (!name.trim() || !phone.trim()) return "Please enter your name and phone number.";
+    if (!name.trim() || !phone.trim())
+      return "Please enter your name and phone number.";
     if (online && !/^\S+@\S+\.\S+$/.test(email.trim()))
       return "Please enter a valid email address for your receipt.";
     if (method === "delivery") {
@@ -102,7 +105,10 @@ export default function CheckoutView({ zones }: { zones: DeliveryZone[] }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: lines.map((l) => ({ slug: l.product.slug, quantity: l.quantity })),
+          items: lines.map((l) => ({
+            slug: l.product.slug,
+            quantity: l.quantity,
+          })),
           name,
           email,
           phone,
@@ -116,7 +122,11 @@ export default function CheckoutView({ zones }: { zones: DeliveryZone[] }) {
       if (!res.ok) throw new Error(data.error || "Could not start payment.");
       window.location.href = data.url; // go to Paystack
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again.",
+      );
       setPaying(false);
     }
   };
@@ -132,8 +142,8 @@ export default function CheckoutView({ zones }: { zones: DeliveryZone[] }) {
       method === "pickup"
         ? "Pickup at the salon"
         : zone
-        ? `Delivery to ${zone.name} (${formatMoney(zone.fee)}): ${address.trim()}`
-        : `Delivery to: ${address.trim()} (please quote delivery fee)`;
+          ? `Delivery to ${zone.name} (${formatMoney(zone.fee)}): ${address.trim()}`
+          : `Delivery to: ${address.trim()} (please quote delivery fee)`;
 
     const message = [
       `Hi ${site.name}! I'd like to place an order 🛍️`,
@@ -141,7 +151,7 @@ export default function CheckoutView({ zones }: { zones: DeliveryZone[] }) {
       "",
       ...lines.map(
         ({ product, quantity }) =>
-          `• ${quantity} × ${product.name} – ${formatMoney(product.price * quantity)}`
+          `• ${quantity} × ${product.name} – ${formatMoney(product.price * quantity)}`,
       ),
       "",
       `Subtotal: ${formatMoney(subtotal)}`,
@@ -184,7 +194,13 @@ export default function CheckoutView({ zones }: { zones: DeliveryZone[] }) {
   );
 
   return (
-    <form onSubmit={handlePay} className="grid gap-8 md:grid-cols-3">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleWhatsApp();
+      }}
+      className="grid gap-8 md:grid-cols-3"
+    >
       {/* Details */}
       <div className="space-y-8 md:col-span-2">
         <section>
@@ -198,14 +214,7 @@ export default function CheckoutView({ zones }: { zones: DeliveryZone[] }) {
               autoComplete="name"
               className={inputClass}
             />
-            <input
-              type="email"
-              placeholder="Email (for your receipt)"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              className={inputClass}
-            />
+
             <input
               type="tel"
               placeholder="Phone number"
@@ -218,9 +227,15 @@ export default function CheckoutView({ zones }: { zones: DeliveryZone[] }) {
         </section>
 
         <section>
-          <h2 className="mb-3 font-display text-xl">How would you like to get it?</h2>
+          <h2 className="mb-3 font-display text-xl">
+            How would you like to get it?
+          </h2>
           <div className="space-y-3">
-            {methodOption("pickup", "Pickup at the salon", "Free. We’ll let you know when it’s ready.")}
+            {methodOption(
+              "pickup",
+              "Pickup at the salon",
+              "Free. We’ll let you know when it’s ready.",
+            )}
             {methodOption("delivery", "Delivery", "Fee depends on your area.")}
           </div>
 
@@ -249,8 +264,8 @@ export default function CheckoutView({ zones }: { zones: DeliveryZone[] }) {
                 className={inputClass}
               />
               <p className="text-xs text-plum/60">
-                Can’t find your area? Choose “Order on WhatsApp” below and we’ll quote your
-                delivery fee.
+                Can’t find your area? Just enter your address and we’ll quote
+                your delivery fee on WhatsApp.
               </p>
             </div>
           )}
@@ -273,11 +288,17 @@ export default function CheckoutView({ zones }: { zones: DeliveryZone[] }) {
         <h2 className="font-display text-xl">Order Summary</h2>
         <ul className="mt-4 space-y-3">
           {lines.map(({ product, quantity }) => (
-            <li key={product.slug} className="flex justify-between gap-3 text-sm">
+            <li
+              key={product.slug}
+              className="flex justify-between gap-3 text-sm"
+            >
               <span>
-                {product.name} <span className="text-plum/60">× {quantity}</span>
+                {product.name}{" "}
+                <span className="text-plum/60">× {quantity}</span>
               </span>
-              <span className="shrink-0">{formatMoney(product.price * quantity)}</span>
+              <span className="shrink-0">
+                {formatMoney(product.price * quantity)}
+              </span>
             </li>
           ))}
         </ul>
@@ -292,8 +313,8 @@ export default function CheckoutView({ zones }: { zones: DeliveryZone[] }) {
               {method === "pickup"
                 ? "Free"
                 : zone
-                ? formatMoney(zone.fee)
-                : "Choose your area"}
+                  ? formatMoney(zone.fee)
+                  : "Choose your area"}
             </span>
           </div>
         </div>
@@ -306,26 +327,13 @@ export default function CheckoutView({ zones }: { zones: DeliveryZone[] }) {
 
         <button
           type="submit"
-          disabled={paying}
-          className="mt-5 w-full rounded-full bg-rosy py-3 font-medium text-white shadow-sm transition-colors hover:bg-berry disabled:opacity-60"
+          className="mt-5 w-full rounded-full bg-rosy py-3 font-medium text-white shadow-sm transition-colors hover:bg-berry"
         >
-          {paying ? "Opening Paystack…" : `Pay ${formatMoney(total)}`}
+          Send Order on WhatsApp
         </button>
         <p className="mt-2 text-center text-xs text-plum/60">
-          Secure payment by card, bank transfer or USSD via Paystack.
+          We’ll reply with payment details to confirm your order.
         </p>
-
-        <div className="my-4 flex items-center gap-3 text-xs text-plum/50">
-          <span className="h-px flex-1 bg-petal" /> or <span className="h-px flex-1 bg-petal" />
-        </div>
-
-        <button
-          type="button"
-          onClick={handleWhatsApp}
-          className="w-full rounded-full border-2 border-rosy py-3 text-sm font-medium text-berry transition-colors hover:bg-petal"
-        >
-          Order on WhatsApp &amp; pay later
-        </button>
 
         <Link
           href="/cart"
